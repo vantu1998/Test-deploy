@@ -1,0 +1,39 @@
+  checkSessionExpire() {
+    let timerFlag;
+    let hasShowDialog = false;
+    this.sessionTimeOut.select().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(expireTime => {
+      if (!!timerFlag) {
+        clearTimeout(timerFlag);
+      }
+      const remainTime = (expireTime.expiresOn - new Date().getTime()) - 300000;
+      timerFlag = setTimeout(() => {
+        if (!this.formActiveComponent.viewMode) {
+          this.dialogService.openInformationDialog('Warning', 'Token will be expire about 5 minute', false);
+        }
+      }, remainTime);
+    });
+    timer(30000, 30000).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(res => {
+      console.log(res);
+      try {
+        let expiresOn: any = localStorage.getItem('sessionExpireOn');
+        expiresOn = parseInt(expiresOn);
+        let remainTime = (expiresOn - new Date().getTime()) - 300000;
+        if (remainTime < 0) {
+          remainTime = 0;
+        }
+        const isExpireBeforeEdit = !this.formActiveComponent.viewMode && remainTime === 0;
+        if (isExpireBeforeEdit && !hasShowDialog) {
+          this.dialogService.openInformationDialog('Warning', 'Token will be expire about 5 minute', false).subscribe(() => {
+            hasShowDialog = true;
+          });
+        }
+        this.sessionTimeOut.update(expiresOn);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+  }
